@@ -1,7 +1,7 @@
 from sre_constants import IN
 
 
-INTEGER, PLUS, EOF = 'INTEGER', 'PLUS', 'EOF'
+INTEGER, MINUS, PLUS, EOF = 'INTEGER', 'MINUS', 'PLUS', 'EOF'
 
 
 class Token(object):
@@ -24,24 +24,44 @@ class Interpreter(object):
         self.text = text
         self.pos = 0
         self.current_token = None
+        self.current_char = self.text[self.pos]
 
     def error(self):
         raise Exception('Error parsing input')
 
+    def advance(self):
+        self.pos += 1
+        if self.pos >= len(self.text):
+            self.current_char = None
+        else:
+            self.current_char = self.text[self.pos]
+
+    def skip_whitespace(self):
+        while self.current_char is not None and self.current_char.isspace():
+            self.advance()
+
+    def integer(self):
+        res = ''
+        while(self.current_char is not None and self.current_char.isdigit()):
+            res += self.current_char
+            self.advance()
+        return int(res)
+
     def get_next_token(self):
-        text = self.text
-        if(self.pos > len(text)-1):
-            return Token(EOF, None)
-        current_char = text[self.pos]
-        if(current_char.isdigit()):
-            token = Token(INTEGER, int(current_char))
-            self.pos += 1
-            return token
-        if(current_char == '+'):
-            token = Token(PLUS, current_char)
-            self.pos += 1
-            return token
-        self.error()
+        while(self.current_char is not None):
+            if(self.current_char.isspace()):
+                self.skip_whitespace()
+                continue
+            if(self.current_char.isdigit()):
+                return Token(INTEGER, self.integer())
+            if(self.current_char == '+'):
+                self.advance()
+                return Token(PLUS, '+')
+            if(self.current_char == '-'):
+                self.advance()
+                return Token(MINUS, '-')
+            self.error()
+        return Token(EOF, None)
 
     def eat(self, token_type):
         if(self.current_token.type == token_type):
@@ -54,10 +74,16 @@ class Interpreter(object):
         left = self.current_token
         self.eat(INTEGER)
         op = self.current_token
-        self.eat(PLUS)
+        if(op.type == PLUS):
+            self.eat(PLUS)
+        else:
+            self.eat(MINUS)
         right = self.current_token
         self.eat(INTEGER)
-        res = left.value + right.value
+        if(op.type == PLUS):
+            res = left.value + right.value
+        else:
+            res = left.value - right.value
         return res
 
 
