@@ -6,10 +6,6 @@
 #                                                                             #
 ###############################################################################
 
-# Token types
-#
-# EOF (end-of-file) token is used to indicate that
-# there is no more input left for lexical analysis
 (INTEGER, PLUS, MINUS, MUL, DIV, LPAREN, RPAREN, ID, ASSIGN,
  BEGIN, END, SEMI, DOT, EOF) = (
     'INTEGER', 'PLUS', 'MINUS', 'MUL', 'DIV', '(', ')', 'ID', 'ASSIGN',
@@ -23,13 +19,6 @@ class Token(object):
         self.value = value
 
     def __str__(self):
-        """String representation of the class instance.
-
-        Examples:
-            Token(INTEGER, 3)
-            Token(PLUS, '+')
-            Token(MUL, '*')
-        """
         return 'Token({type}, {value})'.format(
             type=self.type,
             value=repr(self.value)
@@ -47,9 +36,7 @@ RESERVED_KEYWORDS = {
 
 class Lexer(object):
     def __init__(self, text):
-        # client string input, e.g. "4 + 2 * 3 - 6 / 2"
         self.text = text
-        # self.pos is an index into self.text
         self.pos = 0
         self.current_char = self.text[self.pos]
 
@@ -57,10 +44,9 @@ class Lexer(object):
         raise Exception('Invalid character')
 
     def advance(self):
-        """Advance the `pos` pointer and set the `current_char` variable."""
         self.pos += 1
         if self.pos > len(self.text) - 1:
-            self.current_char = None  # Indicates end of input
+            self.current_char = None
         else:
             self.current_char = self.text[self.pos]
 
@@ -76,7 +62,6 @@ class Lexer(object):
             self.advance()
 
     def integer(self):
-        """Return a (multidigit) integer consumed from the input."""
         result = ''
         while self.current_char is not None and self.current_char.isdigit():
             result += self.current_char
@@ -94,11 +79,6 @@ class Lexer(object):
         return token
 
     def get_next_token(self):
-        """Lexical analyzer (also known as scanner or tokenizer)
-
-        This method is responsible for breaking a sentence
-        apart into tokens. One token at a time.
-        """
         while self.current_char is not None:
 
             if self.current_char.isspace():
@@ -184,6 +164,7 @@ class UnaryOp(AST):
 
 class Compound(AST):
     """Represents a 'BEGIN ... END' block"""
+
     def __init__(self):
         self.children = []
 
@@ -197,6 +178,7 @@ class Assign(AST):
 
 class Var(AST):
     """The Var node is constructed out of ID token."""
+
     def __init__(self, token):
         self.token = token
         self.value = token.value
@@ -209,17 +191,12 @@ class NoOp(AST):
 class Parser(object):
     def __init__(self, lexer):
         self.lexer = lexer
-        # set current token to the first token taken from the input
         self.current_token = self.lexer.get_next_token()
 
     def error(self):
         raise Exception('Invalid syntax')
 
     def eat(self, token_type):
-        # compare the current token type with the passed token
-        # type and if they match then "eat" the current token
-        # and assign the next token to the self.current_token,
-        # otherwise raise an exception.
         if self.current_token.type == token_type:
             self.current_token = self.lexer.get_next_token()
         else:
